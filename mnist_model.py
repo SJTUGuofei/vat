@@ -28,8 +28,8 @@ class MLPModel:
         self.b_fc2 = bias_variable([num_classes])
         self.weights.append(self.w_fc2)
         self.biases.append(self.b_fc2)
-    def __call__(self, input_op):
-        h_fc1 = tf.nn.relu(tf.matmul(input_op, self.w_fc1) + self.b_fc1)
+    def __call__(self, input_tensor):
+        h_fc1 = tf.nn.relu(tf.matmul(input_tensor, self.w_fc1) + self.b_fc1)
         h_fc1 = tf.nn.dropout(h_fc1, keep_prob=self.keep_prob)
         logits = tf.matmul(h_fc1, self.w_fc2) + self.b_fc2
         return logits
@@ -56,8 +56,8 @@ class CNNModel:
         self.b_fc2 = bias_variable([num_classes])
         self.weights.append(self.w_fc2)
         self.biases.append(self.b_fc2)
-    def __call__(self, input_op, isTrain):
-        input_image = tf.reshape(input_op, [-1, 28,28, 1])
+    def __call__(self, input_tensor, isTrain):
+        input_image = tf.reshape(input_tensor, [-1, 28,28, 1])
         h_conv1 = convolution(input_image, self.w_conv1, self.b_conv1)
         h_conv2 = convolution(h_conv1, self.w_conv2, self.b_conv2)
         h_conv2_flat = tf.reshape(h_conv2, [-1, 7*7*64])
