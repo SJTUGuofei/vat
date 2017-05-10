@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-def VAT(input_tensor, network, network_to_approximate=None, xi=1e-6, num_approximation=1, clip_value_min=1e-30, dtype=tf.float32):
+def VAT(input_tensor, network, network_to_approximate=None, xi=1e-6, epsilon=2.0, num_approximation=1, clip_value_min=1e-30, dtype=tf.float32):
     """
     https://arxiv.org/abs/1704.03976
     ===input===
@@ -10,6 +10,7 @@ def VAT(input_tensor, network, network_to_approximate=None, xi=1e-6, num_approxi
                              this may be useful when you want network to behave differently from the usual training part at some points such like dropout.
                              if this is None (default), this is same as "network."
     xi                     : scale of perturbation that is used to approximate the virtual adversarial perturbation. (default: 1e-6)
+    epsilon                : scale of virtual adversarial perturbation. results can be sensitive at this number. (default: 2.0)
     num_approximation      : number of iteration to approximate the virtual adversarial perturbation. (default: 1)
     clip_value_min         : this is for clipping some values that is divisor or given to log. (default: 1e-30)
     dtype                  : dtype of tensors in this function. (default: tf.float32)
@@ -43,7 +44,7 @@ def VAT(input_tensor, network, network_to_approximate=None, xi=1e-6, num_approxi
 
     current_softmax = tf.nn.softmax(network(input_tensor)) if not isSameNetwork else plain_softmax
     current_softmax = tf.stop_gradient(current_softmax)
-    vat_perturbation = tf.stop_gradient(vat_perturbation)
+    vat_perturbation = tf.stop_gradient(epsilon * vat_perturbation)
     vat_softmax = tf.nn.softmax(network(input_tensor + vat_perturbation))
     vat_cross_entropy = tf.reduce_mean(-tf.reduce_sum(current_softmax * tf.log(clipped(vat_softmax)), reduction_indices=1))
     return vat_cross_entropy, vat_perturbation
