@@ -47,7 +47,7 @@ def VAT(input_tensor, network, network_to_approximate=None, xi=1e-6, epsilon=2.0
     current_softmax = tf.stop_gradient(current_softmax)
     vat_perturbation = tf.stop_gradient(epsilon * vat_perturbation)
     vat_softmax = tf.nn.softmax(network(input_tensor + vat_perturbation))
-    vat_cross_entropy = tf.reduce_mean(-tf.reduce_sum(current_softmax * tf.log(clipped(vat_softmax)), reduction_indices=1) * weight)
+    vat_cross_entropy = tf.reduce_sum(-tf.reduce_sum(current_softmax * tf.log(clipped(vat_softmax)), reduction_indices=1) * weight) / (tf.reduce_sum(weight)+1e-30)
     return vat_cross_entropy, vat_perturbation
 
 
