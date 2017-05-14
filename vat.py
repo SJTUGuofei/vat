@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-def VAT(input_tensor, network, network_to_approximate=None, xi=1e-6, epsilon=2.0, num_approximation=1, clip_value_min=1e-30, dtype=tf.float32):
+def VAT(input_tensor, network, network_to_approximate=None, xi=1e-6, epsilon=2.0, weight=1.0, num_approximation=1, clip_value_min=1e-30, dtype=tf.float32):
     """
     https://arxiv.org/abs/1704.03976
     ===input===
@@ -11,6 +11,7 @@ def VAT(input_tensor, network, network_to_approximate=None, xi=1e-6, epsilon=2.0
                              if this is None (default), this is same as "network."
     xi                     : scale of perturbation that is used to approximate the virtual adversarial perturbation. (default: 1e-6)
     epsilon                : scale of virtual adversarial perturbation. results can be sensitive at this number. (default: 2.0)
+    weight                 : weight of loss. (default: 1.0)
     num_approximation      : number of iteration to approximate the virtual adversarial perturbation. (default: 1)
     clip_value_min         : this is for clipping some values that is divisor or given to log. (default: 1e-30)
     dtype                  : dtype of tensors in this function. (default: tf.float32)
@@ -37,7 +38,7 @@ def VAT(input_tensor, network, network_to_approximate=None, xi=1e-6, epsilon=2.0
     perturbation = xi * normalized(tf.random_normal(shape=tf.shape(input_tensor), dtype=dtype))
     for i in range(num_approximation):
         softmax_accommodating_perturbation = tf.nn.softmax(network_to_approximate(input_tensor + perturbation))
-        cross_entropy_accommodating_perturbation = -tf.reduce_sum(plain_softmax * tf.log(clipped(softmax_accommodating_perturbation)), reduction_indices=1)
+        cross_entropy_accommodating_perturbation = -tf.reduce_sum(plain_softmax * tf.log(clipped(softmax_accommodating_perturbation)), reduction_indices=1) * weight
         adversarial_direction = tf.gradients(cross_entropy_accommodating_perturbation, [perturbation])[0]
         vat_perturbation = normalized(adversarial_direction)
         perturbation = xi * vat_perturbation
@@ -46,7 +47,7 @@ def VAT(input_tensor, network, network_to_approximate=None, xi=1e-6, epsilon=2.0
     current_softmax = tf.stop_gradient(current_softmax)
     vat_perturbation = tf.stop_gradient(epsilon * vat_perturbation)
     vat_softmax = tf.nn.softmax(network(input_tensor + vat_perturbation))
-    vat_cross_entropy = tf.reduce_mean(-tf.reduce_sum(current_softmax * tf.log(clipped(vat_softmax)), reduction_indices=1))
+    vat_cross_entropy = tf.reduce_mean(-tf.reduce_sum(current_softmax * tf.log(clipped(vat_softmax)), reduction_indices=1) * weight)
     return vat_cross_entropy, vat_perturbation
 
 
